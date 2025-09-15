@@ -1,7 +1,7 @@
 import { Timestamp } from "firebase/firestore"
 
 export interface Movie {
-  id?: string 
+  id: string 
   name: string
   director: string
   genres: string
@@ -9,7 +9,8 @@ export interface Movie {
   released: string
   description: string
   imdbRating: number
-  language: string
+  imageUrl?: string;
   userId: string
-  createdAt: Timestamp
+  createdAt: string | Timestamp;
+  updatedAt?: string | Timestamp;
 }

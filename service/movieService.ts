@@ -1,49 +1,40 @@
-import { db } from "@/firebase"; // adjust import path
-import { Book } from "@/types/movie"; // your Book interface
+// src/service/movieService.ts
+import { db } from "@/firebase"
+import { Movie } from "@/types/movie"
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
   getDocs,
-  query,
-  serverTimestamp,
   updateDoc,
-  where,
-} from "firebase/firestore";
+} from "firebase/firestore"
 
-const booksRef = collection(db, "books");
+export const moviesRef = collection(db, "movies")
 
-export const BookService = {
-  // CREATE
-addBook: async (book: Omit<Book, "id" | "createdAt">) => {
-  const docRef = await addDoc(booksRef, {
-    ...book,
-    createdAt: serverTimestamp(),
-  });
-  return { id: docRef.id };
-},
+// CREATE
+export const addMovie = async (movie: Omit<Movie, "id">) => {
+  await addDoc(moviesRef, movie)
+}
 
+// READ
+export const getAllMovies = async (): Promise<Movie[]> => {
+  const snapshot = await getDocs(moviesRef)
+  return snapshot.docs.map(
+    (d) => ({ id: d.id, ...d.data() } as Movie)
+  )
+}
 
-  // READ (all books by user)
-  getBooksByUser: async (userId: string): Promise<Book[]> => {
-    const q = query(booksRef, where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...(docSnap.data() as Book),
-    }));
-  },
+// UPDATE
+export const updateMovie = async (id: string, movie: Partial<Movie>) => {
+  console.log("Updating movie with id:", id, "and data:", movie)
+  const docRef = doc(db, "movies", id)
+  await updateDoc(docRef, movie)
+}
 
-  // UPDATE
-  updateBook: async (id: string, data: Partial<Book>) => {
-    const bookDoc = doc(db, "books", id);
-    await updateDoc(bookDoc, data);
-  },
-
-  // DELETE
-  deleteBook: async (id: string) => {
-    const bookDoc = doc(db, "books", id);
-    await deleteDoc(bookDoc);
-  },
-};
+// DELETE
+export const deleteMovie = async (id: string) => {
+  console.log("Deleting movie with id:", id)
+  const docRef = doc(db, "movies", id)
+  await deleteDoc(docRef)
+}

@@ -1,45 +1,35 @@
-
-
-import { View, Text } from 'react-native'
-import React from 'react'
-import { Tabs } from 'expo-router'
-import {MaterialIcons} from '@expo/vector-icons'
-
+// app/_layout.tsx (for expo-router layout)
+import { MaterialIcons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
 
 const tabs = [
-    {label:"Home",name:"home",icon:"home-filled"},
-    {label:"Books",name:"book",icon:"check-circle"},
-    {label:"Profile",name:"profile",icon:"person"},
-    {label:"Setting",name:"settings",icon:"settings"}
-]
+  { label: "Home", name: "home", icon: "movie-filter" },
+  { label: "Movies", name: "movies", icon: "local-movies" },
+  { label: "Settings", name: "settings", icon: "settings" },
+] as const;
 
-const DashboardLayout = () => {
+export default function Layout() {
   return (
-  <Tabs 
-  screenOptions={{
-    tabBarActiveTintColor:"#007AFF",
-    tabBarInactiveTintColor:"#999",
-    headerShown:false,
-    tabBarStyle:{
-        backgroundColor:"#ccc"
-    }
-  }}
-  >
-    {tabs.map(({name,icon,label})=>(
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: "#FF4500",
+        tabBarInactiveTintColor: "#999",
+        headerShown: false,
+        tabBarStyle: { backgroundColor: "#1E1E1E" },
+      }}
+    >
+      {tabs.map(({ name, icon, label }) => (
         <Tabs.Screen
-        key={name}
-        name={name}
-        options={{
-            title:label,
-            tabBarIcon:({color,size})=>(
-                <MaterialIcons name={icon as any} color={color} size={size} />
-            )
-        }}
+          key={name}
+          name={name}
+          options={{
+            title: label,
+            tabBarIcon: ({ color, size }) => (
+              <MaterialIcons name={icon} color={color} size={size} />
+            ),
+          }}
         />
-    ))}
-    
-  </Tabs>
-)
+      ))}
+    </Tabs>
+  );
 }
-
-export default DashboardLayout

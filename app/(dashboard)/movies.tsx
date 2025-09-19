@@ -1,7 +1,6 @@
 import { addMovie, deleteMovie, getAllMovies, updateMovie } from '@/service/movieService';
 import { Movie } from '@/types/movie';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import Slider from '@react-native-community/slider';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
@@ -9,8 +8,10 @@ import {
   Alert,
   Dimensions,
   Image,
+  ImageBackground,
   Modal,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -18,7 +19,7 @@ import {
   View
 } from 'react-native';
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height } = Dimensions.get('window');
 
 const Movies = () => {
   const [addModalVisible, setAddModalVisible] = useState(false);
@@ -222,19 +223,35 @@ const Movies = () => {
   }
 
   return (
-    
     <View style={styles.container}>
-      {/* Header */}
-      
-      <View style={styles.header}>
-        <Text style={styles.title}>🎥 Manage Movies</Text>
-        <Text style={styles.subtitle}>Add, edit, and review movies</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => setAddModalVisible(true)}
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      {/* Hero Header Section */}
+      <View style={styles.heroContainer}>
+        <ImageBackground
+          source={require("../../assets/images/screen-0.jpg")}
+          resizeMode="cover"
+          style={styles.heroBg}
         >
-          <Text style={styles.addButtonText}>+ Add Movie</Text>
-        </TouchableOpacity>
+          <View style={styles.overlay} />
+          <View style={styles.heroContent}>
+            <View style={styles.logoCircle}>
+              <Ionicons name="film-outline" size={36} color="#fff" />
+            </View>
+            <View style={styles.logoRow}>
+              <Text style={styles.movieText}>Movie</Text>
+              <View style={styles.hubBox}>
+                <Text style={styles.hubText}>Hub</Text>
+              </View>
+            </View>
+            <Text style={styles.tagline}>Discover. Review. Share your favorites.</Text>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => setAddModalVisible(true)}
+            >
+              <Text style={styles.addButtonText}>+ Add Movie</Text>
+            </TouchableOpacity>
+          </View>
+        </ImageBackground>
       </View>
 
       {/* Movies List */}
@@ -252,7 +269,10 @@ const Movies = () => {
           contentContainerStyle={styles.scrollContent}
         >
           {movies.map((movie, index) => (
-            <View key={movie.id} style={[styles.card, { marginTop: index === 0 ? 0 : 16 }]}>
+            <View
+              key={movie.id}
+              style={[styles.card, { marginTop: index === 0 ? 0 : 16 }]}
+            >
               <View style={styles.cardContent}>
                 {movie.imageUrl && (
                   <View style={styles.imageContainer}>
@@ -295,57 +315,93 @@ const Movies = () => {
       )}
 
       {/* Add Movie Modal */}
-      <Modal visible={addModalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={addModalVisible}
+        onRequestClose={() => setAddModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Movie</Text>
-            <TextInput placeholder="Name" placeholderTextColor="#aaa" style={styles.input} value={addName} onChangeText={setAddName} />
-            <TextInput placeholder="Director" placeholderTextColor="#aaa" style={styles.input} value={addDirector} onChangeText={setAddDirector} />
-            <TextInput placeholder="Genres" placeholderTextColor="#aaa" style={styles.input} value={addGenres} onChangeText={setAddGenres} />
-            <TextInput placeholder="Actors" placeholderTextColor="#aaa" style={styles.input} value={addActors} onChangeText={setAddActors} />
-
-            {/* Released Date */}
-            <TouchableOpacity onPress={() => { setShowDatePicker(true); setIsForUpdate(false); }} style={styles.input}>
-              <Text style={{ color: addReleased ? "#fff" : "#aaa" }}>{addReleased || "Select Release Date"}</Text>
-            </TouchableOpacity>
-            {showDatePicker && !isForUpdate && (
-              <DateTimePicker
-                value={new Date()}
-                mode="date"
-                display="default"
-                onChange={(event, date) => {
-                  setShowDatePicker(false);
-                  if (date) setAddReleased(date.toISOString().split("T")[0]);
-                }}
-              />
-            )}
-
-            <TextInput placeholder="Description" placeholderTextColor="#aaa" style={styles.input} value={addDescription} onChangeText={setAddDescription} />
-
-            {/* IMDb Rating Slider */}
-            <Text style={styles.sliderLabel}>IMDB Rating: {addImdbRating.toFixed(1)}</Text>
-            <Slider
-              minimumValue={0}
-              maximumValue={10}
-              step={0.1}
-              value={addImdbRating}
-              onValueChange={setAddImdbRating}
-              minimumTrackTintColor="#f59e0b"
-              maximumTrackTintColor="#444"
+            <Text style={styles.modalTitle}>Add New Movie</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Name"
+              placeholderTextColor="#999"
+              value={addName}
+              onChangeText={setAddName}
             />
-
-            {/* Image Picker */}
-            <TouchableOpacity onPress={() => pickImage(false)} style={styles.imagePicker}>
-              <Text style={{ color: "#f59e0b" }}>{addImageUrl ? "Change Image" : "Pick Image"}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Director"
+              placeholderTextColor="#999"
+              value={addDirector}
+              onChangeText={setAddDirector}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Genres (e.g., Action, Sci-Fi)"
+              placeholderTextColor="#999"
+              value={addGenres}
+              onChangeText={setAddGenres}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Actors (comma-separated)"
+              placeholderTextColor="#999"
+              value={addActors}
+              onChangeText={setAddActors}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Released Year"
+              placeholderTextColor="#999"
+              value={addReleased}
+              onChangeText={setAddReleased}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Description"
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={4}
+              value={addDescription}
+              onChangeText={setAddDescription}
+            />
+            <View style={styles.ratingContainer}>
+              <Text style={styles.ratingText}>IMDb Rating: {addImdbRating}</Text>
+              <View style={styles.ratingStars}>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => setAddImdbRating(star)}
+                  >
+                    <Ionicons
+                      name={star <= addImdbRating ? 'star' : 'star-outline'}
+                      size={24}
+                      color="#f59e0b"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            <TouchableOpacity style={styles.imagePickerButton} onPress={() => pickImage()}>
+              <Text style={styles.imagePickerButtonText}>Choose Image</Text>
             </TouchableOpacity>
-            {addImageUrl ? <Image source={{ uri: addImageUrl }} style={styles.previewImage} /> : null}
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.saveButton} onPress={handleAddMovie}>
-                <Text style={styles.saveButtonText}>{loading ? "Saving..." : "Save"}</Text>
+            {addImageUrl ? (
+              <Image source={{ uri: addImageUrl }} style={styles.modalImagePreview} />
+            ) : null}
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity style={styles.modalButton} onPress={handleAddMovie} disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator color="#111" />
+                ) : (
+                  <Text style={styles.modalButtonText}>Add Movie</Text>
+                )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setAddModalVisible(false)}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+              <TouchableOpacity style={[styles.modalButton, styles.modalCloseButton]} onPress={() => setAddModalVisible(false)}>
+                <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -353,108 +409,281 @@ const Movies = () => {
       </Modal>
 
       {/* Update Movie Modal */}
-      <Modal visible={updateModalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={updateModalVisible}
+        onRequestClose={() => setUpdateModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Update Movie</Text>
-            <TextInput placeholder="Name" placeholderTextColor="#aaa" style={styles.input} value={updateName} onChangeText={setUpdateName} />
-            <TextInput placeholder="Director" placeholderTextColor="#aaa" style={styles.input} value={updateDirector} onChangeText={setUpdateDirector} />
-            <TextInput placeholder="Genres" placeholderTextColor="#aaa" style={styles.input} value={updateGenres} onChangeText={setUpdateGenres} />
-            <TextInput placeholder="Actors" placeholderTextColor="#aaa" style={styles.input} value={updateActors} onChangeText={setUpdateActors} />
-
-            {/* Released Date */}
-            <TouchableOpacity onPress={() => { setShowDatePicker(true); setIsForUpdate(true); }} style={styles.input}>
-              <Text style={{ color: updateReleased ? "#fff" : "#aaa" }}>{updateReleased || "Select Release Date"}</Text>
-            </TouchableOpacity>
-            {showDatePicker && isForUpdate && (
-              <DateTimePicker
-                value={new Date()}
-                mode="date"
-                display="default"
-                onChange={(event, date) => {
-                  setShowDatePicker(false);
-                  if (date) setUpdateReleased(date.toISOString().split("T")[0]);
-                }}
-              />
-            )}
-
-            <TextInput placeholder="Description" placeholderTextColor="#aaa" style={styles.input} value={updateDescription} onChangeText={setUpdateDescription} />
-
-            {/* IMDb Rating Slider */}
-            <Text style={styles.sliderLabel}>IMDB Rating: {updateImdbRating.toFixed(1)}</Text>
-            <Slider
-              minimumValue={0}
-              maximumValue={10}
-              step={0.1}
-              value={updateImdbRating}
-              onValueChange={setUpdateImdbRating}
-              minimumTrackTintColor="#f59e0b"
-              maximumTrackTintColor="#444"
+            <TextInput
+              style={styles.input}
+              placeholder="Name"
+              placeholderTextColor="#999"
+              value={updateName}
+              onChangeText={setUpdateName}
             />
-
-            {/* Image Picker */}
-            <TouchableOpacity onPress={() => pickImage(true)} style={styles.imagePicker}>
-              <Text style={{ color: "#f59e0b" }}>{updateImageUrl ? "Change Image" : "Pick Image"}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Director"
+              placeholderTextColor="#999"
+              value={updateDirector}
+              onChangeText={setUpdateDirector}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Genres (e.g., Action, Sci-Fi)"
+              placeholderTextColor="#999"
+              value={updateGenres}
+              onChangeText={setUpdateGenres}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Actors (comma-separated)"
+              placeholderTextColor="#999"
+              value={updateActors}
+              onChangeText={setUpdateActors}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Released Year"
+              placeholderTextColor="#999"
+              value={updateReleased}
+              onChangeText={setUpdateReleased}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Description"
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={4}
+              value={updateDescription}
+              onChangeText={setUpdateDescription}
+            />
+            <View style={styles.ratingContainer}>
+              <Text style={styles.ratingText}>IMDb Rating: {updateImdbRating}</Text>
+              <View style={styles.ratingStars}>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => setUpdateImdbRating(star)}
+                  >
+                    <Ionicons
+                      name={star <= updateImdbRating ? 'star' : 'star-outline'}
+                      size={24}
+                      color="#f59e0b"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            <TouchableOpacity style={styles.imagePickerButton} onPress={() => pickImage(true)}>
+              <Text style={styles.imagePickerButtonText}>Choose Image</Text>
             </TouchableOpacity>
-            {updateImageUrl ? <Image source={{ uri: updateImageUrl }} style={styles.previewImage} /> : null}
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.saveButton} onPress={handleUpdateMovie}>
-                <Text style={styles.saveButtonText}>{loading ? "Updating..." : "Update"}</Text>
+            {updateImageUrl ? (
+              <Image source={{ uri: updateImageUrl }} style={styles.modalImagePreview} />
+            ) : null}
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity style={styles.modalButton} onPress={handleUpdateMovie} disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator color="#111" />
+                ) : (
+                  <Text style={styles.modalButtonText}>Update Movie</Text>
+                )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setUpdateModalVisible(false)}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+              <TouchableOpacity style={[styles.modalButton, styles.modalCloseButton]} onPress={() => setUpdateModalVisible(false)}>
+                <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#111' },
-  header: { padding: 20, backgroundColor: '#1a1a1a', borderBottomWidth: 1, borderBottomColor: '#333' },
-  title: { fontSize: 28, fontWeight: '800', color: '#f59e0b', textAlign: 'center' },
-  subtitle: { fontSize: 16, color: '#ccc', textAlign: 'center', marginBottom: 16 },
-  addButton: { backgroundColor: '#f59e0b', padding: 12, borderRadius: 10, alignSelf: 'center' },
-  addButtonText: { color: '#111', fontWeight: '700' },
+  container: { flex: 1, backgroundColor: "#111" },
 
+  /** HERO HEADER **/
+  heroContainer: {
+    height: height * 0.35,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: "hidden",
+    marginBottom: 12,
+  },
+  heroBg: { flex: 1, justifyContent: "center", alignItems: "center" },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.6)" },
+  heroContent: { alignItems: "center", paddingHorizontal: 16 },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#f59e0b",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  logoRow: { flexDirection: "row", alignItems: "center" },
+  movieText: { fontSize: 32, fontWeight: "900", color: "#fff" },
+  hubBox: {
+    backgroundColor: "#f59e0b",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  hubText: { fontSize: 28, fontWeight: "900", color: "#111" },
+  tagline: {
+    fontSize: 14,
+    color: "#ccc",
+    marginTop: 6,
+    textAlign: "center",
+  },
+  addButton: {
+    backgroundColor: "#f59e0b",
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    marginTop: 14,
+  },
+  addButtonText: { color: "#111", fontWeight: "700" },
+
+  /** MOVIE CARDS **/
   scrollView: { flex: 1 },
   scrollContent: { padding: 16 },
-  card: { backgroundColor: '#1e1e1e', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#333' },
-  cardContent: { flexDirection: 'row' },
-  imageContainer: { marginRight: 12, borderRadius: 8, overflow: 'hidden' },
+  card: {
+    backgroundColor: "#1e1e1e",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#333",
+    marginTop: 16
+  },
+  cardContent: { flexDirection: "row" },
+  imageContainer: { marginRight: 12, borderRadius: 8, overflow: "hidden" },
   movieImage: { width: 100, height: 140, borderRadius: 8 },
   textContent: { flex: 1 },
-  movieTitle: { fontSize: 18, fontWeight: '700', color: '#f59e0b' },
-  movieSubtitle: { fontSize: 14, color: '#ccc', marginBottom: 6 },
-  movieDescription: { fontSize: 14, color: '#aaa', marginBottom: 8 },
-  actionButtons: { flexDirection: 'row', gap: 8 },
-  updateButton: { backgroundColor: '#10B981', padding: 6, borderRadius: 6, flex: 1 },
-  updateButtonText: { color: '#fff', textAlign: 'center', fontSize: 12 },
-  deleteButton: { backgroundColor: '#EF4444', padding: 6, borderRadius: 6, flex: 1 },
-  deleteButtonText: { color: '#fff', textAlign: 'center', fontSize: 12 },
+  movieTitle: { fontSize: 18, fontWeight: "700", color: "#f59e0b" },
+  movieSubtitle: { fontSize: 14, color: "#ccc", marginBottom: 6 },
+  movieDescription: { fontSize: 14, color: "#aaa", marginBottom: 8 },
+  actionButtons: { flexDirection: "row", gap: 8 },
+  updateButton: {
+    backgroundColor: "#10B981",
+    padding: 6,
+    borderRadius: 6,
+    flex: 1,
+  },
+  updateButtonText: { color: "#fff", textAlign: "center", fontSize: 12 },
+  deleteButton: {
+    backgroundColor: "#EF4444",
+    padding: 6,
+    borderRadius: 6,
+    flex: 1,
+  },
+  deleteButtonText: { color: "#fff", textAlign: "center", fontSize: 12 },
 
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111' },
-  loadingText: { marginTop: 12, fontSize: 16, color: '#ccc' },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#f59e0b', marginBottom: 8 },
-  emptySubtitle: { fontSize: 14, color: '#aaa' },
+  /** EMPTY LIST **/
+  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#f59e0b",
+    marginBottom: 8,
+  },
+  emptySubtitle: { fontSize: 14, color: "#aaa" },
 
-  modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.8)' },
-  modalContent: { width: screenWidth * 0.9, backgroundColor: '#1a1a1a', padding: 20, borderRadius: 12, borderWidth: 1, borderColor: '#333' },
-  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 12, color: '#f59e0b' },
-  input: { borderWidth: 1, borderColor: '#333', borderRadius: 8, padding: 10, marginBottom: 10, color: '#fff', backgroundColor: '#111' },
-  modalActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 },
-  saveButton: { backgroundColor: '#f59e0b', padding: 10, borderRadius: 8, flex: 1, marginRight: 6 },
-  saveButtonText: { color: '#111', textAlign: 'center', fontWeight: '700' },
-  cancelButton: { backgroundColor: '#333', padding: 10, borderRadius: 8, flex: 1, marginLeft: 6 },
-  cancelButtonText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
-  imagePicker: { borderWidth: 1, borderColor: '#333', borderRadius: 8, padding: 10, alignItems: 'center', marginBottom: 10 },
-  previewImage: { width: 100, height: 100, borderRadius: 8, marginBottom: 10, alignSelf: 'center' },
-  sliderLabel: { color: '#ccc', marginBottom: 4 }
+  /** LOADING **/
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#111" },
+  loadingText: { marginTop: 12, fontSize: 16, color: "#ccc" },
+
+  /** MODALS **/
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    backgroundColor: '#1e1e1e',
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#f59e0b',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  input: {
+    backgroundColor: '#333',
+    color: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  ratingText: {
+    color: '#ccc',
+    fontSize: 16,
+  },
+  ratingStars: {
+    flexDirection: 'row',
+  },
+  imagePickerButton: {
+    backgroundColor: '#f59e0b',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  imagePickerButtonText: {
+    color: '#111',
+    fontWeight: '600',
+  },
+  modalImagePreview: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 12,
+    resizeMode: 'cover',
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  modalButton: {
+    flex: 1,
+    backgroundColor: '#f59e0b',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  modalCloseButton: {
+    backgroundColor: '#aaa',
+  },
+  modalButtonText: {
+    color: '#111',
+    fontWeight: '700',
+  },
 });
 
 export default Movies;

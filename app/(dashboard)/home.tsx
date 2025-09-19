@@ -1,5 +1,5 @@
 // Home.tsx
-import { getAllMovies } from "@/service/movieService";
+import { getAllMovies, searchMovies } from "@/service/movieService";
 import { Movie } from "@/types/movie";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
@@ -12,6 +12,8 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -20,6 +22,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const Home = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchMovies();
@@ -34,6 +37,16 @@ const Home = () => {
       console.error("Error fetching movies:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = async (text: string) => {
+    setSearchQuery(text);
+    if (text.trim() === "") {
+      fetchMovies();
+    } else {
+      const results = await searchMovies(text);
+      setMovies(results);
     }
   };
 
@@ -71,18 +84,37 @@ const Home = () => {
               </View>
             </View>
 
-            <Text style={styles.tagline}>Discover. Review. Share your favorites.</Text>
+            <Text style={styles.tagline}>
+              Discover. Review. Share your favorites.
+            </Text>
           </View>
         </ImageBackground>
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search-outline" size={20} color="#9ca3af" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search movies..."
+          placeholderTextColor="#9ca3af"
+          value={searchQuery}
+          onChangeText={handleSearch}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => handleSearch("")}>
+            <Ionicons name="close-circle" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Movies */}
       {movies.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>🎬</Text>
-          <Text style={styles.emptyTitle}>No movies yet</Text>
+          <Text style={styles.emptyTitle}>No movies found</Text>
           <Text style={styles.emptySubtitle}>
-            Start by adding your first movie review!
+            Try searching with different keywords.
           </Text>
         </View>
       ) : (
@@ -199,6 +231,23 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.9)",
     marginTop: 8,
     textAlign: "center",
+  },
+
+  // Search Bar
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#0f0f10",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    height: 44,
+  },
+  searchInput: {
+    flex: 1,
+    color: "#fff",
+    marginLeft: 8,
   },
 
   // Movie List

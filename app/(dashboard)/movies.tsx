@@ -1,8 +1,10 @@
 import { addMovie, deleteMovie, getAllMovies, updateMovie } from '@/service/movieService';
 import { Movie } from '@/types/movie';
 import { Ionicons } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
+
 import {
   ActivityIndicator,
   Alert,
@@ -369,23 +371,22 @@ const Movies = () => {
               value={addDescription}
               onChangeText={setAddDescription}
             />
-            <View style={styles.ratingContainer}>
-              <Text style={styles.ratingText}>IMDb Rating: {addImdbRating}</Text>
-              <View style={styles.ratingStars}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
-                  <TouchableOpacity
-                    key={star}
-                    onPress={() => setAddImdbRating(star)}
-                  >
-                    <Ionicons
-                      name={star <= addImdbRating ? 'star' : 'star-outline'}
-                      size={24}
-                      color="#f59e0b"
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
+           <View style={styles.ratingContainer}>
+            <Text style={styles.ratingText}>IMDb Rating: {addImdbRating.toFixed(1)}</Text>
+              <Slider
+                style={{ flex: 1, marginLeft: 12 }}
+                minimumValue={0}
+                maximumValue={10}
+                step={0.1}
+                minimumTrackTintColor="#f59e0b"
+                maximumTrackTintColor="#555"
+                thumbTintColor="#f59e0b"
+                value={addImdbRating}
+                onValueChange={(value) => setAddImdbRating(parseFloat(value.toFixed(1)))}
+              />
             </View>
+
+
             <TouchableOpacity style={styles.imagePickerButton} onPress={() => pickImage()}>
               <Text style={styles.imagePickerButtonText}>Choose Image</Text>
             </TouchableOpacity>
@@ -464,22 +465,22 @@ const Movies = () => {
               onChangeText={setUpdateDescription}
             />
             <View style={styles.ratingContainer}>
-              <Text style={styles.ratingText}>IMDb Rating: {updateImdbRating}</Text>
-              <View style={styles.ratingStars}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
-                  <TouchableOpacity
-                    key={star}
-                    onPress={() => setUpdateImdbRating(star)}
-                  >
-                    <Ionicons
-                      name={star <= updateImdbRating ? 'star' : 'star-outline'}
-                      size={24}
-                      color="#f59e0b"
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <Text style={styles.ratingText}>IMDb Rating: {updateImdbRating.toFixed(1)}</Text>
+              <Slider
+                style={{ flex: 1, marginLeft: 12 }}
+                minimumValue={0}
+                maximumValue={10}
+                step={0.1}
+                minimumTrackTintColor="#f59e0b"
+                maximumTrackTintColor="#555"
+                thumbTintColor="#f59e0b"
+                value={updateImdbRating}
+                onValueChange={(value) => setUpdateImdbRating(parseFloat(value.toFixed(1)))}
+              />
             </View>
+
+
+            
             <TouchableOpacity style={styles.imagePickerButton} onPress={() => pickImage(true)}>
               <Text style={styles.imagePickerButtonText}>Choose Image</Text>
             </TouchableOpacity>
@@ -508,6 +509,18 @@ const Movies = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#111" },
+
+  ratingContainer: {
+  marginBottom: 16,
+  flexDirection: "row",
+  alignItems: "center",
+},
+ratingText: {
+  color: "#f59e0b",
+  fontSize: 16,
+  fontWeight: "600",
+  width: 100,
+},
 
   /** HERO HEADER **/
   heroContainer: {
@@ -633,16 +646,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 12,
   },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  ratingText: {
-    color: '#ccc',
-    fontSize: 16,
-  },
+  // ratingContainer: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   justifyContent: 'space-between',
+  //   marginBottom: 12,
+  // },
+  // ratingText: {
+  //   color: '#ccc',
+  //   fontSize: 16,
+  // },
   ratingStars: {
     flexDirection: 'row',
   },

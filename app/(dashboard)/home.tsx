@@ -8,6 +8,7 @@ import {
   Dimensions,
   Image,
   ImageBackground,
+  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -23,6 +24,7 @@ const Home = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
   useEffect(() => {
     fetchMovies();
@@ -124,11 +126,13 @@ const Home = () => {
           showsVerticalScrollIndicator={false}
         >
           {movies.map((movie, index) => (
-            <View
+            <TouchableOpacity
               key={movie.id}
               style={[styles.movieCard, { marginTop: index === 0 ? 0 : 16 }]}
+              activeOpacity={0.9}
+              onPress={() => setSelectedMovie(movie)}
             >
-              <View style={styles.cardAccent} />
+              <View style={styles.cardFrame} />
 
               {/* Poster */}
               {movie.imageUrl && (
@@ -154,11 +158,56 @@ const Home = () => {
                   {movie.description}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
 
           <View style={{ height: 30 }} />
         </ScrollView>
+      )}
+
+      {/* Movie Preview Modal */}
+      {selectedMovie && (
+        <Modal
+          visible={true}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setSelectedMovie(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              {/* Close button */}
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setSelectedMovie(null)}
+              >
+                <Ionicons name="close" size={26} color="#fff" />
+              </TouchableOpacity>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {selectedMovie.imageUrl && (
+                  <Image
+                    source={{ uri: selectedMovie.imageUrl }}
+                    style={styles.modalPoster}
+                    resizeMode="cover"
+                  />
+                )}
+
+                <Text style={styles.modalTitle}>{selectedMovie.name}</Text>
+                <Text style={styles.modalMeta}>
+                  🎬 {selectedMovie.director} | ⭐ {selectedMovie.imdbRating}
+                </Text>
+                <Text style={styles.modalMeta}>
+                  {selectedMovie.genres} | {selectedMovie.released}
+                </Text>
+                {/* New: show actors */}
+                <Text style={styles.modalMeta}>👥 {selectedMovie.actors}</Text>
+                <Text style={styles.modalDescription}>
+                  {selectedMovie.description}
+                </Text>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       )}
     </View>
   );
@@ -263,21 +312,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#0f0f10",
     borderRadius: 16,
     padding: 12,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    elevation: 5,
+    shadowColor: "#f59e0b",
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     position: "relative",
+    borderWidth: 1,
+    borderColor: "rgba(245,158,11,0.4)",
   },
-  cardAccent: {
+  cardFrame: {
     position: "absolute",
-    left: 0,
-    top: 12,
-    bottom: 12,
-    width: 4,
-    backgroundColor: "#f59e0b",
-    borderRadius: 2,
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: "rgba(245,158,11,0.6)",
   },
   poster: {
     width: 100,
@@ -292,7 +344,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#f9fafb",
+    color: "#f59e0b",
     marginBottom: 4,
   },
   meta: {
@@ -304,6 +356,52 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#d1d5db",
     marginTop: 4,
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  modalContent: {
+    width: "100%",
+    maxHeight: "85%",
+    backgroundColor: "#111",
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#f59e0b",
+  },
+  closeButton: {
+    alignSelf: "flex-end",
+    marginBottom: 10,
+  },
+  modalPoster: {
+    width: "100%",
+    height: screenHeight * 0.55, // give it height but keep full image
+    borderRadius: 12,
+    marginBottom: 16,
+    backgroundColor: "#000", // helps show transparent areas if any
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#f59e0b",
+    marginBottom: 8,
+  },
+  modalMeta: {
+    fontSize: 14,
+    color: "#9ca3af",
+    marginBottom: 4,
+  },
+  modalDescription: {
+    fontSize: 15,
+    color: "#d1d5db",
+    marginTop: 8,
+    lineHeight: 22,
   },
 
   // Loading

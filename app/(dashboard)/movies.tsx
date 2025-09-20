@@ -590,7 +590,7 @@ ratingText: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#f59e0b",
+    // backgroundColor: "#000",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,

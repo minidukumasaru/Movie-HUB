@@ -95,7 +95,7 @@ const Home = () => {
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <Ionicons name="search-outline" size={20} color="#9ca3af" />
+        <Ionicons name="search-outline" size={20} color="#f59e0b" />
         <TextInput
           style={styles.searchInput}
           placeholder="Search movies..."

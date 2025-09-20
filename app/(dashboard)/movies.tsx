@@ -317,191 +317,244 @@ const Movies = () => {
       )}
 
       {/* Add Movie Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={addModalVisible}
-        onRequestClose={() => setAddModalVisible(false)}
+<Modal
+  animationType="slide"
+  transparent={true}
+  visible={addModalVisible}
+  onRequestClose={() => setAddModalVisible(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New Movie</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Name"
-              placeholderTextColor="#999"
-              value={addName}
-              onChangeText={setAddName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Director"
-              placeholderTextColor="#999"
-              value={addDirector}
-              onChangeText={setAddDirector}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Genres (e.g., Action, Sci-Fi)"
-              placeholderTextColor="#999"
-              value={addGenres}
-              onChangeText={setAddGenres}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Actors (comma-separated)"
-              placeholderTextColor="#999"
-              value={addActors}
-              onChangeText={setAddActors}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Released Year"
-              placeholderTextColor="#999"
-              value={addReleased}
-              onChangeText={setAddReleased}
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Description"
-              placeholderTextColor="#999"
-              multiline
-              numberOfLines={4}
-              value={addDescription}
-              onChangeText={setAddDescription}
-            />
-           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>IMDb Rating: {addImdbRating.toFixed(1)}</Text>
-              <Slider
-                style={{ flex: 1, marginLeft: 12 }}
-                minimumValue={0}
-                maximumValue={10}
-                step={0.1}
-                minimumTrackTintColor="#f59e0b"
-                maximumTrackTintColor="#555"
-                thumbTintColor="#f59e0b"
-                value={addImdbRating}
-                onValueChange={(value) => setAddImdbRating(parseFloat(value.toFixed(1)))}
-              />
-            </View>
+        <Text style={styles.modalTitle}>Add New Movie</Text>
 
+        <TextInput
+          style={styles.input}
+          placeholder="Name"
+          placeholderTextColor="#999"
+          value={addName}
+          onChangeText={setAddName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Director"
+          placeholderTextColor="#999"
+          value={addDirector}
+          onChangeText={setAddDirector}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Genres (e.g., Action, Sci-Fi)"
+          placeholderTextColor="#999"
+          value={addGenres}
+          onChangeText={setAddGenres}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Actors (comma-separated)"
+          placeholderTextColor="#999"
+          value={addActors}
+          onChangeText={setAddActors}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Released Year"
+          placeholderTextColor="#999"
+          value={addReleased}
+          onChangeText={setAddReleased}
+          keyboardType="numeric"
+        />
+        <TextInput
+          style={[styles.input, { height: 100, textAlignVertical: "top" }]}
+          placeholder="Description"
+          placeholderTextColor="#999"
+          multiline
+          numberOfLines={4}
+          value={addDescription}
+          onChangeText={setAddDescription}
+        />
 
-            <TouchableOpacity style={styles.imagePickerButton} onPress={() => pickImage()}>
-              <Text style={styles.imagePickerButtonText}>Choose Image</Text>
-            </TouchableOpacity>
-            {addImageUrl ? (
-              <Image source={{ uri: addImageUrl }} style={styles.modalImagePreview} />
-            ) : null}
-            <View style={styles.modalButtonRow}>
-              <TouchableOpacity style={styles.modalButton} onPress={handleAddMovie} disabled={loading}>
-                {loading ? (
-                  <ActivityIndicator color="#111" />
-                ) : (
-                  <Text style={styles.modalButtonText}>Add Movie</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.modalCloseButton]} onPress={() => setAddModalVisible(false)}>
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+        {/* IMDb Rating Slider */}
+        <View style={styles.ratingContainer}>
+          <Text style={styles.ratingText}>
+            IMDb Rating: {addImdbRating.toFixed(1)}
+          </Text>
+          <Slider
+            style={{ flex: 1, marginLeft: 12 }}
+            minimumValue={0}
+            maximumValue={10}
+            step={0.1}
+            minimumTrackTintColor="#f59e0b"
+            maximumTrackTintColor="#555"
+            thumbTintColor="#f59e0b"
+            value={addImdbRating}
+            onValueChange={(value) =>
+              setAddImdbRating(parseFloat(value.toFixed(1)))
+            }
+          />
         </View>
-      </Modal>
+
+        <TouchableOpacity
+          style={styles.imagePickerButton}
+          onPress={() => pickImage()}
+        >
+          <Text style={styles.imagePickerButtonText}>Choose Image</Text>
+        </TouchableOpacity>
+        {addImageUrl ? (
+          <Image
+            source={{ uri: addImageUrl }}
+            style={styles.modalImagePreview}
+          />
+        ) : null}
+      </ScrollView>
+
+      {/* Buttons pinned at bottom */}
+      <View style={styles.modalButtonRow}>
+        <TouchableOpacity
+          style={styles.modalButton}
+          onPress={handleAddMovie}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#111" />
+          ) : (
+            <Text style={styles.modalButtonText}>Add Movie</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.modalCloseButton]}
+          onPress={() => setAddModalVisible(false)}
+        >
+          <Text style={styles.modalButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
 
       {/* Update Movie Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={updateModalVisible}
-        onRequestClose={() => setUpdateModalVisible(false)}
+<Modal
+  animationType="slide"
+  transparent={true}
+  visible={updateModalVisible}
+  onRequestClose={() => setUpdateModalVisible(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Update Movie</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Name"
-              placeholderTextColor="#999"
-              value={updateName}
-              onChangeText={setUpdateName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Director"
-              placeholderTextColor="#999"
-              value={updateDirector}
-              onChangeText={setUpdateDirector}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Genres (e.g., Action, Sci-Fi)"
-              placeholderTextColor="#999"
-              value={updateGenres}
-              onChangeText={setUpdateGenres}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Actors (comma-separated)"
-              placeholderTextColor="#999"
-              value={updateActors}
-              onChangeText={setUpdateActors}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Released Year"
-              placeholderTextColor="#999"
-              value={updateReleased}
-              onChangeText={setUpdateReleased}
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Description"
-              placeholderTextColor="#999"
-              multiline
-              numberOfLines={4}
-              value={updateDescription}
-              onChangeText={setUpdateDescription}
-            />
-            <View style={styles.ratingContainer}>
-              <Text style={styles.ratingText}>IMDb Rating: {updateImdbRating.toFixed(1)}</Text>
-              <Slider
-                style={{ flex: 1, marginLeft: 12 }}
-                minimumValue={0}
-                maximumValue={10}
-                step={0.1}
-                minimumTrackTintColor="#f59e0b"
-                maximumTrackTintColor="#555"
-                thumbTintColor="#f59e0b"
-                value={updateImdbRating}
-                onValueChange={(value) => setUpdateImdbRating(parseFloat(value.toFixed(1)))}
-              />
-            </View>
+        <Text style={styles.modalTitle}>Update Movie</Text>
 
+        <TextInput
+          style={styles.input}
+          placeholder="Name"
+          placeholderTextColor="#999"
+          value={updateName}
+          onChangeText={setUpdateName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Director"
+          placeholderTextColor="#999"
+          value={updateDirector}
+          onChangeText={setUpdateDirector}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Genres (e.g., Action, Sci-Fi)"
+          placeholderTextColor="#999"
+          value={updateGenres}
+          onChangeText={setUpdateGenres}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Actors (comma-separated)"
+          placeholderTextColor="#999"
+          value={updateActors}
+          onChangeText={setUpdateActors}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Released Year"
+          placeholderTextColor="#999"
+          value={updateReleased}
+          onChangeText={setUpdateReleased}
+          keyboardType="numeric"
+        />
+        <TextInput
+          style={[styles.input, { height: 100, textAlignVertical: "top" }]}
+          placeholder="Description"
+          placeholderTextColor="#999"
+          multiline
+          numberOfLines={4}
+          value={updateDescription}
+          onChangeText={setUpdateDescription}
+        />
 
-            
-            <TouchableOpacity style={styles.imagePickerButton} onPress={() => pickImage(true)}>
-              <Text style={styles.imagePickerButtonText}>Choose Image</Text>
-            </TouchableOpacity>
-            {updateImageUrl ? (
-              <Image source={{ uri: updateImageUrl }} style={styles.modalImagePreview} />
-            ) : null}
-            <View style={styles.modalButtonRow}>
-              <TouchableOpacity style={styles.modalButton} onPress={handleUpdateMovie} disabled={loading}>
-                {loading ? (
-                  <ActivityIndicator color="#111" />
-                ) : (
-                  <Text style={styles.modalButtonText}>Update Movie</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.modalCloseButton]} onPress={() => setUpdateModalVisible(false)}>
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+        {/* IMDb Rating Slider */}
+        <View style={styles.ratingContainer}>
+          <Text style={styles.ratingText}>
+            IMDb Rating: {updateImdbRating.toFixed(1)}
+          </Text>
+          <Slider
+            style={{ flex: 1, marginLeft: 12 }}
+            minimumValue={0}
+            maximumValue={10}
+            step={0.1}
+            minimumTrackTintColor="#f59e0b"
+            maximumTrackTintColor="#555"
+            thumbTintColor="#f59e0b"
+            value={updateImdbRating}
+            onValueChange={(value) =>
+              setUpdateImdbRating(parseFloat(value.toFixed(1)))
+            }
+          />
         </View>
-      </Modal>
+
+        <TouchableOpacity
+          style={styles.imagePickerButton}
+          onPress={() => pickImage(true)}
+        >
+          <Text style={styles.imagePickerButtonText}>Choose Image</Text>
+        </TouchableOpacity>
+        {updateImageUrl ? (
+          <Image
+            source={{ uri: updateImageUrl }}
+            style={styles.modalImagePreview}
+          />
+        ) : null}
+      </ScrollView>
+
+      {/* Buttons pinned at bottom */}
+      <View style={styles.modalButtonRow}>
+        <TouchableOpacity
+          style={styles.modalButton}
+          onPress={handleUpdateMovie}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#111" />
+          ) : (
+            <Text style={styles.modalButtonText}>Update Movie</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.modalCloseButton]}
+          onPress={() => setUpdateModalVisible(false)}
+        >
+          <Text style={styles.modalButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
 
     </View>
   );

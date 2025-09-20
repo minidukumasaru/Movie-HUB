@@ -283,21 +283,25 @@ const styles = StyleSheet.create({
   },
 
   // Search Bar
-  searchContainer: {
+    searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#0f0f10",
+    backgroundColor: "rgba(15,15,16,0.85)", // transparent dark bg
     borderRadius: 12,
     paddingHorizontal: 12,
     marginHorizontal: 16,
     marginBottom: 12,
-    height: 44,
+    height: 46,
+    borderWidth: 0.5,
+    borderColor: "#f59e0b", // orange highlight border
   },
   searchInput: {
     flex: 1,
     color: "#fff",
     marginLeft: 8,
+    fontSize: 15,
   },
+
 
   // Movie List
   movieList: {
@@ -309,7 +313,7 @@ const styles = StyleSheet.create({
   },
   movieCard: {
     flexDirection: "row",
-    backgroundColor: "#0f0f10",
+    backgroundColor: "#1e1e1e",
     borderRadius: 16,
     padding: 12,
     elevation: 5,
@@ -319,7 +323,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     position: "relative",
     borderWidth: 1,
-    borderColor: "rgba(245,158,11,0.4)",
+    borderColor: "#333",
   },
   cardFrame: {
     position: "absolute",
@@ -329,7 +333,7 @@ const styles = StyleSheet.create({
     bottom: -2,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: "rgba(245,158,11,0.6)",
+    borderColor: "#333",
   },
   poster: {
     width: 100,
@@ -369,11 +373,12 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "100%",
     maxHeight: "85%",
-    backgroundColor: "#111",
+    backgroundColor: "#1e1e1e",
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#f59e0b",
+    borderColor: "#333",
+    
   },
   closeButton: {
     alignSelf: "flex-end",

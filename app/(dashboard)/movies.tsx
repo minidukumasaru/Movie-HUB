@@ -1,3 +1,5 @@
+import { useAuth } from '@/context/AuthContext';
+import { useFavorites } from '@/context/FavoritesContext';
 import { addMovie, deleteMovie, getAllMovies, updateMovie } from '@/service/movieService';
 import { Movie } from '@/types/movie';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +26,9 @@ import {
 const { width: screenWidth, height } = Dimensions.get('window');
 
 const Movies = () => {
+  const { user, loading: authLoading } = useAuth();
+  const { toggleFavorite, isFavorite } = useFavorites();
+  
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
@@ -48,24 +53,31 @@ const Movies = () => {
   const [updateImdbRating, setUpdateImdbRating] = useState(5);
   const [updateImageUrl, setUpdateImageUrl] = useState('');
 
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [isForUpdate, setIsForUpdate] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [movies, setMovies] = useState<Movie[]>([]);
   const [fetchLoading, setFetchLoading] = useState(true);
 
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    if (user) {
+      fetchMovies();
+    } else if (!authLoading) {
+      setMovies([]);
+      setFetchLoading(false);
+    }
+  }, [user, authLoading]);
 
   const fetchMovies = async () => {
+    if (!user) return;
+    
     try {
       setFetchLoading(true);
       const allMovies = await getAllMovies();
-      setMovies(allMovies);
+      // Filter movies for the current user
+      const userMovies = allMovies.filter(movie => movie.userId === user.uid);
+      setMovies(userMovies);
     } catch (error) {
       console.error("Error fetching movies:", error);
+      Alert.alert("Error", "Failed to fetch movies. Please try again.");
     } finally {
       setFetchLoading(false);
     }
@@ -88,6 +100,11 @@ const Movies = () => {
   };
 
   const handleAddMovie = async () => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to add movies');
+      return;
+    }
+
     if (!addName.trim() || !addDirector.trim() || !addDescription.trim()) {
       Alert.alert('Error', 'Please fill in required fields: name, director, description');
       return;
@@ -104,12 +121,13 @@ const Movies = () => {
         description: addDescription.trim(),
         imdbRating: addImdbRating,
         imageUrl: addImageUrl.trim() || undefined,
-        userId: "demo-user",
+        userId: user.uid, // Use authenticated user's UID
         createdAt: new Date().toISOString(),
       };
 
       await addMovie(newMovie);
 
+      // Clear form
       setAddName('');
       setAddDirector('');
       setAddGenres('');
@@ -131,8 +149,19 @@ const Movies = () => {
   };
 
   const handleUpdateMovie = async () => {
-    if (!updateName.trim() || !updateDirector.trim() || !updateDescription.trim() || !selectedMovie) {
+    if (!user || !selectedMovie) {
+      Alert.alert('Error', 'Authentication error');
+      return;
+    }
+
+    if (!updateName.trim() || !updateDirector.trim() || !updateDescription.trim()) {
       Alert.alert('Error', 'Please fill in required fields: name, director, description');
+      return;
+    }
+
+    // Check ownership
+    if (selectedMovie.userId !== user.uid) {
+      Alert.alert('Error', 'You can only update your own movies');
       return;
     }
 
@@ -178,7 +207,18 @@ const Movies = () => {
     );
   };
 
-  const handleDeleteMovie = async (id: string) => {
+  const handleDeleteMovie = async (id: string, movieUserId: string) => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in');
+      return;
+    }
+
+    // Check ownership
+    if (movieUserId !== user.uid) {
+      Alert.alert('Error', 'You can only delete your own movies');
+      return;
+    }
+
     Alert.alert(
       "Confirm Delete",
       "Are you sure you want to delete this movie?",
@@ -203,6 +243,11 @@ const Movies = () => {
   };
 
   const openUpdateModal = (movie: Movie) => {
+    if (!user || movie.userId !== user.uid) {
+      Alert.alert('Error', 'You can only edit your own movies');
+      return;
+    }
+
     setSelectedMovie(movie);
     setUpdateName(movie.name);
     setUpdateDirector(movie.director);
@@ -215,11 +260,34 @@ const Movies = () => {
     setUpdateModalVisible(true);
   };
 
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#f59e0b" />
+        <Text style={styles.loadingText}>Checking authentication...</Text>
+      </View>
+    );
+  }
+
+  // Show login required message
+  if (!user) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Ionicons name="person-circle-outline" size={80} color="#f59e0b" />
+        <Text style={styles.emptyTitle}>Please log in</Text>
+        <Text style={styles.emptySubtitle}>
+          You need to be logged in to manage your movies
+        </Text>
+      </View>
+    );
+  }
+
   if (fetchLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#f59e0b" />
-        <Text style={styles.loadingText}>Loading movies...</Text>
+        <Text style={styles.loadingText}>Loading your movies...</Text>
       </View>
     );
   }
@@ -227,6 +295,7 @@ const Movies = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
+      
       {/* Hero Header Section */}
       <View style={styles.heroContainer}>
         <ImageBackground
@@ -246,6 +315,7 @@ const Movies = () => {
               </View>
             </View>
             <Text style={styles.tagline}>Discover. Review. Share your favorites.</Text>
+            <Text style={styles.userEmail}>Welcome, {user.email}</Text>
             <TouchableOpacity
               style={styles.addButton}
               onPress={() => setAddModalVisible(true)}
@@ -297,16 +367,31 @@ const Movies = () => {
                   </Text>
                   <View style={styles.actionButtons}>
                     <TouchableOpacity
+                      style={styles.favoriteButton}
+                      onPress={() => toggleFavorite(movie)}
+                    >
+                      <Ionicons
+                        name={isFavorite(movie.id) ? "heart" : "heart-outline"}
+                        size={18}
+                        color={isFavorite(movie.id) ? "#EF4444" : "#999"}
+                      />
+                      <Text style={[styles.favoriteButtonText, { 
+                        color: isFavorite(movie.id) ? "#EF4444" : "#999" 
+                      }]}>
+                        {isFavorite(movie.id) ? "Favorited" : "Favorite"}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
                       style={styles.updateButton}
                       onPress={() => openUpdateModal(movie)}
                     >
-                      <Text style={styles.updateButtonText}>✏️ Edit</Text>
+                      <Text style={styles.updateButtonText}>✏ Edit</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.deleteButton}
-                      onPress={() => handleDeleteMovie(movie.id)}
+                      onPress={() => handleDeleteMovie(movie.id, movie.userId)}
                     >
-                      <Text style={styles.deleteButtonText}>🗑️ Delete</Text>
+                      <Text style={styles.deleteButtonText}>🗑 Delete</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -317,245 +402,242 @@ const Movies = () => {
       )}
 
       {/* Add Movie Modal */}
-<Modal
-  animationType="slide"
-  transparent={true}
-  visible={addModalVisible}
-  onRequestClose={() => setAddModalVisible(false)}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={addModalVisible}
+        onRequestClose={() => setAddModalVisible(false)}
       >
-        <Text style={styles.modalTitle}>Add New Movie</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            >
+              <Text style={styles.modalTitle}>Add New Movie</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Name"
-          placeholderTextColor="#999"
-          value={addName}
-          onChangeText={setAddName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Director"
-          placeholderTextColor="#999"
-          value={addDirector}
-          onChangeText={setAddDirector}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Genres (e.g., Action, Sci-Fi)"
-          placeholderTextColor="#999"
-          value={addGenres}
-          onChangeText={setAddGenres}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Actors (comma-separated)"
-          placeholderTextColor="#999"
-          value={addActors}
-          onChangeText={setAddActors}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Released Year"
-          placeholderTextColor="#999"
-          value={addReleased}
-          onChangeText={setAddReleased}
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={[styles.input, { height: 100, textAlignVertical: "top" }]}
-          placeholder="Description"
-          placeholderTextColor="#999"
-          multiline
-          numberOfLines={4}
-          value={addDescription}
-          onChangeText={setAddDescription}
-        />
+              <TextInput
+                style={styles.input}
+                placeholder="Name"
+                placeholderTextColor="#999"
+                value={addName}
+                onChangeText={setAddName}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Director"
+                placeholderTextColor="#999"
+                value={addDirector}
+                onChangeText={setAddDirector}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Genres (e.g., Action, Sci-Fi)"
+                placeholderTextColor="#999"
+                value={addGenres}
+                onChangeText={setAddGenres}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Actors (comma-separated)"
+                placeholderTextColor="#999"
+                value={addActors}
+                onChangeText={setAddActors}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Released Year"
+                placeholderTextColor="#999"
+                value={addReleased}
+                onChangeText={setAddReleased}
+                keyboardType="numeric"
+              />
+              <TextInput
+                style={[styles.input, { height: 100, textAlignVertical: "top" }]}
+                placeholder="Description"
+                placeholderTextColor="#999"
+                multiline
+                numberOfLines={4}
+                value={addDescription}
+                onChangeText={setAddDescription}
+              />
 
-        {/* IMDb Rating Slider */}
-        <View style={styles.ratingContainer}>
-          <Text style={styles.ratingText}>
-            IMDb Rating: {addImdbRating.toFixed(1)}
-          </Text>
-          <Slider
-            style={{ flex: 1, marginLeft: 12 }}
-            minimumValue={0}
-            maximumValue={10}
-            step={0.1}
-            minimumTrackTintColor="#f59e0b"
-            maximumTrackTintColor="#555"
-            thumbTintColor="#f59e0b"
-            value={addImdbRating}
-            onValueChange={(value) =>
-              setAddImdbRating(parseFloat(value.toFixed(1)))
-            }
-          />
+              {/* IMDb Rating Slider */}
+              <View style={styles.ratingContainer}>
+                <Text style={styles.ratingText}>
+                  IMDb Rating: {addImdbRating.toFixed(1)}
+                </Text>
+                <Slider
+                  style={{ flex: 1, marginLeft: 12 }}
+                  minimumValue={0}
+                  maximumValue={10}
+                  step={0.1}
+                  minimumTrackTintColor="#f59e0b"
+                  maximumTrackTintColor="#555"
+                  thumbTintColor="#f59e0b"
+                  value={addImdbRating}
+                  onValueChange={(value) =>
+                    setAddImdbRating(parseFloat(value.toFixed(1)))
+                  }
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.imagePickerButton}
+                onPress={() => pickImage()}
+              >
+                <Text style={styles.imagePickerButtonText}>Choose Image</Text>
+              </TouchableOpacity>
+              {addImageUrl ? (
+                <Image
+                  source={{ uri: addImageUrl }}
+                  style={styles.modalImagePreview}
+                />
+              ) : null}
+            </ScrollView>
+
+            {/* Buttons pinned at bottom */}
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={handleAddMovie}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#111" />
+                ) : (
+                  <Text style={styles.modalButtonText}>Add Movie</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCloseButton]}
+                onPress={() => setAddModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-
-        <TouchableOpacity
-          style={styles.imagePickerButton}
-          onPress={() => pickImage()}
-        >
-          <Text style={styles.imagePickerButtonText}>Choose Image</Text>
-        </TouchableOpacity>
-        {addImageUrl ? (
-          <Image
-            source={{ uri: addImageUrl }}
-            style={styles.modalImagePreview}
-          />
-        ) : null}
-      </ScrollView>
-
-      {/* Buttons pinned at bottom */}
-      <View style={styles.modalButtonRow}>
-        <TouchableOpacity
-          style={styles.modalButton}
-          onPress={handleAddMovie}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#111" />
-          ) : (
-            <Text style={styles.modalButtonText}>Add Movie</Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.modalButton, styles.modalCloseButton]}
-          onPress={() => setAddModalVisible(false)}
-        >
-          <Text style={styles.modalButtonText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-</Modal>
-
+      </Modal>
 
       {/* Update Movie Modal */}
-<Modal
-  animationType="slide"
-  transparent={true}
-  visible={updateModalVisible}
-  onRequestClose={() => setUpdateModalVisible(false)}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={updateModalVisible}
+        onRequestClose={() => setUpdateModalVisible(false)}
       >
-        <Text style={styles.modalTitle}>Update Movie</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            >
+              <Text style={styles.modalTitle}>Update Movie</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Name"
-          placeholderTextColor="#999"
-          value={updateName}
-          onChangeText={setUpdateName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Director"
-          placeholderTextColor="#999"
-          value={updateDirector}
-          onChangeText={setUpdateDirector}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Genres (e.g., Action, Sci-Fi)"
-          placeholderTextColor="#999"
-          value={updateGenres}
-          onChangeText={setUpdateGenres}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Actors (comma-separated)"
-          placeholderTextColor="#999"
-          value={updateActors}
-          onChangeText={setUpdateActors}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Released Year"
-          placeholderTextColor="#999"
-          value={updateReleased}
-          onChangeText={setUpdateReleased}
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={[styles.input, { height: 100, textAlignVertical: "top" }]}
-          placeholder="Description"
-          placeholderTextColor="#999"
-          multiline
-          numberOfLines={4}
-          value={updateDescription}
-          onChangeText={setUpdateDescription}
-        />
+              <TextInput
+                style={styles.input}
+                placeholder="Name"
+                placeholderTextColor="#999"
+                value={updateName}
+                onChangeText={setUpdateName}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Director"
+                placeholderTextColor="#999"
+                value={updateDirector}
+                onChangeText={setUpdateDirector}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Genres (e.g., Action, Sci-Fi)"
+                placeholderTextColor="#999"
+                value={updateGenres}
+                onChangeText={setUpdateGenres}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Actors (comma-separated)"
+                placeholderTextColor="#999"
+                value={updateActors}
+                onChangeText={setUpdateActors}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Released Year"
+                placeholderTextColor="#999"
+                value={updateReleased}
+                onChangeText={setUpdateReleased}
+                keyboardType="numeric"
+              />
+              <TextInput
+                style={[styles.input, { height: 100, textAlignVertical: "top" }]}
+                placeholder="Description"
+                placeholderTextColor="#999"
+                multiline
+                numberOfLines={4}
+                value={updateDescription}
+                onChangeText={setUpdateDescription}
+              />
 
-        {/* IMDb Rating Slider */}
-        <View style={styles.ratingContainer}>
-          <Text style={styles.ratingText}>
-            IMDb Rating: {updateImdbRating.toFixed(1)}
-          </Text>
-          <Slider
-            style={{ flex: 1, marginLeft: 12 }}
-            minimumValue={0}
-            maximumValue={10}
-            step={0.1}
-            minimumTrackTintColor="#f59e0b"
-            maximumTrackTintColor="#555"
-            thumbTintColor="#f59e0b"
-            value={updateImdbRating}
-            onValueChange={(value) =>
-              setUpdateImdbRating(parseFloat(value.toFixed(1)))
-            }
-          />
+              {/* IMDb Rating Slider */}
+              <View style={styles.ratingContainer}>
+                <Text style={styles.ratingText}>
+                  IMDb Rating: {updateImdbRating.toFixed(1)}
+                </Text>
+                <Slider
+                  style={{ flex: 1, marginLeft: 12 }}
+                  minimumValue={0}
+                  maximumValue={10}
+                  step={0.1}
+                  minimumTrackTintColor="#f59e0b"
+                  maximumTrackTintColor="#555"
+                  thumbTintColor="#f59e0b"
+                  value={updateImdbRating}
+                  onValueChange={(value) =>
+                    setUpdateImdbRating(parseFloat(value.toFixed(1)))
+                  }
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.imagePickerButton}
+                onPress={() => pickImage(true)}
+              >
+                <Text style={styles.imagePickerButtonText}>Choose Image</Text>
+              </TouchableOpacity>
+              {updateImageUrl ? (
+                <Image
+                  source={{ uri: updateImageUrl }}
+                  style={styles.modalImagePreview}
+                />
+              ) : null}
+            </ScrollView>
+
+            {/* Buttons pinned at bottom */}
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={handleUpdateMovie}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#111" />
+                ) : (
+                  <Text style={styles.modalButtonText}>Update Movie</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCloseButton]}
+                onPress={() => setUpdateModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-
-        <TouchableOpacity
-          style={styles.imagePickerButton}
-          onPress={() => pickImage(true)}
-        >
-          <Text style={styles.imagePickerButtonText}>Choose Image</Text>
-        </TouchableOpacity>
-        {updateImageUrl ? (
-          <Image
-            source={{ uri: updateImageUrl }}
-            style={styles.modalImagePreview}
-          />
-        ) : null}
-      </ScrollView>
-
-      {/* Buttons pinned at bottom */}
-      <View style={styles.modalButtonRow}>
-        <TouchableOpacity
-          style={styles.modalButton}
-          onPress={handleUpdateMovie}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#111" />
-          ) : (
-            <Text style={styles.modalButtonText}>Update Movie</Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.modalButton, styles.modalCloseButton]}
-          onPress={() => setUpdateModalVisible(false)}
-        >
-          <Text style={styles.modalButtonText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-</Modal>
-
-
+      </Modal>
     </View>
   );
 };
@@ -564,16 +646,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#111" },
 
   ratingContainer: {
-  marginBottom: 16,
-  flexDirection: "row",
-  alignItems: "center",
-},
-ratingText: {
-  color: "#f59e0b",
-  fontSize: 16,
-  fontWeight: "600",
-  width: 100,
-},
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  ratingText: {
+    color: "#f59e0b",
+    fontSize: 16,
+    fontWeight: "600",
+    width: 100,
+  },
 
   /** HERO HEADER **/
   heroContainer: {
@@ -590,7 +672,6 @@ ratingText: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    // backgroundColor: "#000",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
@@ -611,6 +692,12 @@ ratingText: {
     marginTop: 6,
     textAlign: "center",
   },
+  userEmail: {
+    fontSize: 12,
+    color: "#f59e0b",
+    marginTop: 4,
+    textAlign: "center",
+  },
   addButton: {
     backgroundColor: "#f59e0b",
     paddingVertical: 10,
@@ -629,7 +716,6 @@ ratingText: {
     padding: 12,
     borderWidth: 1,
     borderColor: "#333",
-    marginTop: 16
   },
   cardContent: { flexDirection: "row" },
   imageContainer: { marginRight: 12, borderRadius: 8, overflow: "hidden" },
@@ -638,7 +724,18 @@ ratingText: {
   movieTitle: { fontSize: 18, fontWeight: "700", color: "#f59e0b" },
   movieSubtitle: { fontSize: 14, color: "#ccc", marginBottom: 6 },
   movieDescription: { fontSize: 14, color: "#aaa", marginBottom: 8 },
-  actionButtons: { flexDirection: "row", gap: 8 },
+  actionButtons: { flexDirection: "row", gap: 6 },
+  favoriteButton: {
+    backgroundColor: "#333",
+    padding: 6,
+    borderRadius: 6,
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  favoriteButtonText: { fontSize: 10, fontWeight: "600" },
   updateButton: {
     backgroundColor: "#10B981",
     padding: 6,
@@ -662,7 +759,7 @@ ratingText: {
     color: "#f59e0b",
     marginBottom: 8,
   },
-  emptySubtitle: { fontSize: 14, color: "#aaa" },
+  emptySubtitle: { fontSize: 14, color: "#aaa", textAlign: "center" },
 
   /** LOADING **/
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#111" },
@@ -698,19 +795,6 @@ ratingText: {
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 12,
-  },
-  // ratingContainer: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   justifyContent: 'space-between',
-  //   marginBottom: 12,
-  // },
-  // ratingText: {
-  //   color: '#ccc',
-  //   fontSize: 16,
-  // },
-  ratingStars: {
-    flexDirection: 'row',
   },
   imagePickerButton: {
     backgroundColor: '#f59e0b',

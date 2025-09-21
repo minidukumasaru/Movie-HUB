@@ -1,5 +1,6 @@
 // Home.tsx
-import { useFavorites } from "@/context/FavoritesContext"; // ✅ import context
+import { useAuth } from "@/context/AuthContext"; // ✅ import auth
+import { useFavorites } from "@/context/FavoritesContext";
 import { getAllMovies, searchMovies } from "@/service/movieService";
 import { Movie } from "@/types/movie";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,18 +28,26 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  // ✅ use global favorites instead of local state
   const { toggleFavorite, isFavorite } = useFavorites();
+  const { user } = useAuth(); // ✅ get logged in user
 
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    if (user) {
+      fetchMovies();
+    }
+  }, [user]);
 
   const fetchMovies = async () => {
     try {
       setLoading(true);
       const allMovies = await getAllMovies();
-      setMovies(allMovies);
+
+      // ✅ filter movies by user
+      const filtered = user
+        ? allMovies.filter((m) => m.userId === user.uid)
+        : allMovies;
+
+      setMovies(filtered);
     } catch (error) {
       console.error("Error fetching movies:", error);
     } finally {
@@ -52,7 +61,13 @@ const Home = () => {
       fetchMovies();
     } else {
       const results = await searchMovies(text);
-      setMovies(results);
+
+      // ✅ also filter search results by user
+      const filtered = user
+        ? results.filter((m) => m.userId === user.uid)
+        : results;
+
+      setMovies(filtered);
     }
   };
 
@@ -93,6 +108,18 @@ const Home = () => {
             <Text style={styles.tagline}>
               Discover. Review. Share your favorites.
             </Text>
+
+            {/* ✅ Welcome + count */}
+            {user && (
+              <View style={{ marginTop: 12, alignItems: "center" }}>
+                <Text style={{ color: "#fff", fontSize: 15 }}>
+                  👋 Welcome {user.email}
+                </Text>
+                <Text style={{ color: "#f59e0b", fontSize: 14, marginTop: 4 }}>
+                  You have {movies.length} movies
+                </Text>
+              </View>
+            )}
           </View>
         </ImageBackground>
       </View>
@@ -215,7 +242,6 @@ const Home = () => {
                 <Text style={styles.modalMeta}>
                   {selectedMovie.genres} | {selectedMovie.released}
                 </Text>
-                {/* New: show actors */}
                 <Text style={styles.modalMeta}>👥 {selectedMovie.actors}</Text>
                 <Text style={styles.modalDescription}>
                   {selectedMovie.description}
@@ -230,32 +256,17 @@ const Home = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#050505",
-  },
-
-  // Header
+  container: { flex: 1, backgroundColor: "#050505" },
   heroContainer: {
-    height: screenHeight * 0.32,
+    height: screenHeight * 0.36,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     overflow: "hidden",
     marginBottom: 16,
   },
-  heroBg: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  heroContent: {
-    alignItems: "center",
-    zIndex: 2,
-  },
+  heroBg: { flex: 1, justifyContent: "center", alignItems: "center" },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.6)" },
+  heroContent: { alignItems: "center", zIndex: 2 },
   logoCircle: {
     width: 76,
     height: 76,
@@ -267,16 +278,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
   },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  movieText: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: "#fff",
-    letterSpacing: -0.5,
-  },
+  logoRow: { flexDirection: "row", alignItems: "center" },
+  movieText: { fontSize: 32, fontWeight: "900", color: "#fff", letterSpacing: -0.5 },
   hubBox: {
     backgroundColor: "#f59e0b",
     marginLeft: 8,
@@ -285,20 +288,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  hubText: {
-    fontSize: 30,
-    fontWeight: "900",
-    color: "#000",
-    letterSpacing: -0.5,
-  },
-  tagline: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.9)",
-    marginTop: 8,
-    textAlign: "center",
-  },
-
-  // Search Bar
+  hubText: { fontSize: 30, fontWeight: "900", color: "#000", letterSpacing: -0.5 },
+  tagline: { fontSize: 13, color: "rgba(255,255,255,0.9)", marginTop: 8, textAlign: "center" },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -311,21 +302,9 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "#f59e0b",
   },
-  searchInput: {
-    flex: 1,
-    color: "#fff",
-    marginLeft: 8,
-    fontSize: 15,
-  },
-
-  // Movie List
-  movieList: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
+  searchInput: { flex: 1, color: "#fff", marginLeft: 8, fontSize: 15 },
+  movieList: { flex: 1, paddingHorizontal: 16 },
+  scrollContent: { paddingBottom: 20 },
   movieCard: {
     flexDirection: "row",
     backgroundColor: "#1e1e1e",
@@ -350,40 +329,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#333",
   },
-  poster: {
-    width: 100,
-    height: 150,
-    borderRadius: 10,
-    marginRight: 14,
-  },
-  infoSection: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#f59e0b",
-    marginBottom: 4,
-  },
-  meta: {
-    fontSize: 13,
-    color: "#9ca3af",
-    marginBottom: 2,
-  },
-  description: {
-    fontSize: 13,
-    color: "#d1d5db",
-    marginTop: 4,
-  },
-  favoriteButton: {
-    position: "absolute",
-    top: -2,
-    right: 3,
-    padding: 6,
-  },
-
-  // Modal
+  poster: { width: 100, height: 150, borderRadius: 10, marginRight: 14 },
+  infoSection: { flex: 1, justifyContent: "center" },
+  title: { fontSize: 18, fontWeight: "700", color: "#f59e0b", marginBottom: 4 },
+  meta: { fontSize: 13, color: "#9ca3af", marginBottom: 2 },
+  description: { fontSize: 13, color: "#d1d5db", marginTop: 4 },
+  favoriteButton: { position: "absolute", top: -2, right: 3, padding: 6 },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.85)",
@@ -400,10 +351,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333",
   },
-  closeButton: {
-    alignSelf: "flex-end",
-    marginBottom: 10,
-  },
+  closeButton: { alignSelf: "flex-end", marginBottom: 10 },
   modalPoster: {
     width: "100%",
     height: screenHeight * 0.55,
@@ -411,59 +359,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     backgroundColor: "#000",
   },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#f59e0b",
-    marginBottom: 8,
-  },
-  modalMeta: {
-    fontSize: 14,
-    color: "#9ca3af",
-    marginBottom: 4,
-  },
-  modalDescription: {
-    fontSize: 15,
-    color: "#d1d5db",
-    marginTop: 8,
-    lineHeight: 22,
-  },
-
-  // Loading
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#050505",
-  },
-  loadingText: {
-    marginTop: 12,
-    color: "#9ca3af",
-    fontSize: 16,
-  },
-
-  // Empty
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 24,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#fff",
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: "#9ca3af",
-    textAlign: "center",
-  },
+  modalTitle: { fontSize: 22, fontWeight: "900", color: "#f59e0b", marginBottom: 8 },
+  modalMeta: { fontSize: 14, color: "#9ca3af", marginBottom: 4 },
+  modalDescription: { fontSize: 15, color: "#d1d5db", marginTop: 8, lineHeight: 22 },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#050505" },
+  loadingText: { marginTop: 12, color: "#9ca3af", fontSize: 16 },
+  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 24 },
+  emptyIcon: { fontSize: 48, marginBottom: 20 },
+  emptyTitle: { fontSize: 22, fontWeight: "700", color: "#fff", marginBottom: 6 },
+  emptySubtitle: { fontSize: 14, color: "#9ca3af", textAlign: "center" },
 });
 
 export default Home;

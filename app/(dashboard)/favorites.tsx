@@ -1,4 +1,5 @@
 // app/favorites.tsx
+import { useAuth } from "@/context/AuthContext";
 import { useFavorites } from "@/context/FavoritesContext";
 import { getAllMovies } from "@/service/movieService";
 import { Movie } from "@/types/movie";
@@ -21,14 +22,21 @@ import {
 const { height: screenHeight } = Dimensions.get("window");
 
 export default function Favorites() {
+  const { user, loading: authLoading } = useAuth();
+  const { favorites, toggleFavorite, isFavorite, loading: favLoading } = useFavorites();
+  
   const [allMovies, setAllMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const { favorites, toggleFavorite, isFavorite } = useFavorites();
 
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    if (user && !favLoading) {
+      fetchMovies();
+    } else if (!authLoading && !user) {
+      setAllMovies([]);
+      setLoading(false);
+    }
+  }, [user, authLoading, favLoading]);
 
   const fetchMovies = async () => {
     try {
@@ -42,13 +50,37 @@ export default function Favorites() {
     }
   };
 
+  // Filter movies to show only favorites from all users (not just current user's movies)
   const favMovies = allMovies.filter((m) => favorites.includes(m.id));
+
+  // Show loading while checking auth or loading favorites
+  if (authLoading || favLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#F59E0B" />
+        <Text style={styles.loadingText}>Loading favorites...</Text>
+      </View>
+    );
+  }
+
+  // Show login required message
+  if (!user) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Ionicons name="person-circle-outline" size={80} color="#F59E0B" />
+        <Text style={styles.emptyTitle}>Please log in</Text>
+        <Text style={styles.emptySubtitle}>
+          You need to be logged in to view your favorites
+        </Text>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#F59E0B" />
-        <Text style={styles.loadingText}>Loading favorites...</Text>
+        <Text style={styles.loadingText}>Loading movies...</Text>
       </View>
     );
   }
@@ -77,7 +109,11 @@ export default function Favorites() {
               </View>
             </View>
 
-            <Text style={styles.tagline}>Your Favorite Movies ❤️</Text>
+            <Text style={styles.tagline}>Your Favorite Movies ❤</Text>
+            <Text style={styles.userEmail}>{user.email}</Text>
+            <Text style={styles.favoriteCount}>
+              {favMovies.length} favorite{favMovies.length !== 1 ? 's' : ''}
+            </Text>
           </View>
         </ImageBackground>
       </View>
@@ -88,7 +124,7 @@ export default function Favorites() {
           <Text style={styles.emptyIcon}>💔</Text>
           <Text style={styles.emptyTitle}>No favorites yet</Text>
           <Text style={styles.emptySubtitle}>
-            Mark movies with ❤️ to see them here.
+            Mark movies with ❤ to see them here.
           </Text>
         </View>
       ) : (
@@ -127,9 +163,16 @@ export default function Favorites() {
                 <Text style={styles.description} numberOfLines={3}>
                   {movie.description}
                 </Text>
+                
+                {/* Show if it's user's own movie */}
+                {movie.userId === user.uid && (
+                  <View style={styles.ownMovieBadge}>
+                    <Text style={styles.ownMovieText}>Your Movie</Text>
+                  </View>
+                )}
               </View>
 
-              {/* ❤️ Favorite Toggle */}
+              {/* ❤ Favorite Toggle */}
               <TouchableOpacity
                 style={styles.favoriteButton}
                 onPress={() => toggleFavorite(movie)}
@@ -174,7 +217,20 @@ export default function Favorites() {
                   />
                 )}
 
-                <Text style={styles.modalTitle}>{selectedMovie.name}</Text>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>{selectedMovie.name}</Text>
+                  <TouchableOpacity
+                    style={styles.modalFavoriteButton}
+                    onPress={() => toggleFavorite(selectedMovie)}
+                  >
+                    <Ionicons
+                      name={isFavorite(selectedMovie.id) ? "heart" : "heart-outline"}
+                      size={24}
+                      color={isFavorite(selectedMovie.id) ? "red" : "#aaa"}
+                    />
+                  </TouchableOpacity>
+                </View>
+
                 <Text style={styles.modalMeta}>
                   🎬 {selectedMovie.director} | ⭐ {selectedMovie.imdbRating}
                 </Text>
@@ -182,6 +238,13 @@ export default function Favorites() {
                   {selectedMovie.genres} | {selectedMovie.released}
                 </Text>
                 <Text style={styles.modalMeta}>👥 {selectedMovie.actors}</Text>
+                
+                {selectedMovie.userId === user.uid && (
+                  <View style={styles.ownMovieBadgeModal}>
+                    <Text style={styles.ownMovieTextModal}>This is your movie</Text>
+                  </View>
+                )}
+                
                 <Text style={styles.modalDescription}>
                   {selectedMovie.description}
                 </Text>
@@ -230,6 +293,18 @@ const styles = StyleSheet.create({
   },
   hubText: { fontSize: 30, fontWeight: "900", color: "#000" },
   tagline: { fontSize: 13, color: "#fff", marginTop: 8, textAlign: "center" },
+  userEmail: { 
+    fontSize: 12, 
+    color: "#f59e0b", 
+    marginTop: 4, 
+    textAlign: "center" 
+  },
+  favoriteCount: {
+    fontSize: 11,
+    color: "#ccc",
+    marginTop: 2,
+    textAlign: "center",
+  },
   movieList: { flex: 1, paddingHorizontal: 16 },
   scrollContent: { paddingBottom: 20 },
   movieCard: {
@@ -244,9 +319,22 @@ const styles = StyleSheet.create({
   poster: { width: 100, height: 150, borderRadius: 10, marginRight: 14 },
   infoSection: { flex: 1, justifyContent: "center" },
   title: { fontSize: 18, fontWeight: "700", color: "#f59e0b" },
-  meta: { fontSize: 13, color: "#9ca3af" },
-  description: { fontSize: 13, color: "#d1d5db" },
-  favoriteButton: { position: "absolute", top: 10, right: 10, padding: 6 },
+  meta: { fontSize: 13, color: "#9ca3af", marginBottom: 2 },
+  description: { fontSize: 13, color: "#d1d5db", marginTop: 4 },
+  ownMovieBadge: {
+    backgroundColor: "#10B981",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: "flex-start",
+    marginTop: 4,
+  },
+  ownMovieText: {
+    fontSize: 10,
+    color: "#fff",
+    fontWeight: "600",
+  },
+  favoriteButton: { position: "absolute", top: -4, right: 1, padding: 6 },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -262,7 +350,12 @@ const styles = StyleSheet.create({
   },
   emptyIcon: { fontSize: 48, marginBottom: 20 },
   emptyTitle: { fontSize: 22, fontWeight: "700", color: "#fff" },
-  emptySubtitle: { fontSize: 14, color: "#9ca3af" },
+  emptySubtitle: { 
+    fontSize: 14, 
+    color: "#9ca3af", 
+    textAlign: "center",
+    marginTop: 8,
+  },
 
   // Modal
   modalOverlay: {
@@ -292,13 +385,36 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     backgroundColor: "#000",
   },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
   modalTitle: {
     fontSize: 22,
     fontWeight: "900",
     color: "#f59e0b",
-    marginBottom: 8,
+    flex: 1,
+    marginRight: 10,
+  },
+  modalFavoriteButton: {
+    padding: 4,
   },
   modalMeta: { fontSize: 14, color: "#9ca3af", marginBottom: 4 },
+  ownMovieBadgeModal: {
+    backgroundColor: "#10B981",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+    marginVertical: 8,
+  },
+  ownMovieTextModal: {
+    fontSize: 12,
+    color: "#fff",
+    fontWeight: "600",
+  },
   modalDescription: {
     fontSize: 15,
     color: "#d1d5db",

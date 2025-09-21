@@ -315,7 +315,7 @@ const Movies = () => {
               </View>
             </View>
             <Text style={styles.tagline}>Discover. Review. Share your favorites.</Text>
-            <Text style={styles.userEmail}>Welcome, {user.email}</Text>
+            <Text style={styles.userEmail}> 👋 Welcome, {user.email}</Text>
             <TouchableOpacity
               style={styles.addButton}
               onPress={() => setAddModalVisible(true)}

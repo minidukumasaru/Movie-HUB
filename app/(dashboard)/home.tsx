@@ -112,10 +112,10 @@ const Home = () => {
             {/* ✅ Welcome + count */}
             {user && (
               <View style={{ marginTop: 12, alignItems: "center" }}>
-                <Text style={{ color: "#fff", fontSize: 15 }}>
+                <Text style={{ color: "#f59e0b", fontSize: 12 }}>
                   👋 Welcome {user.email}
                 </Text>
-                <Text style={{ color: "#f59e0b", fontSize: 14, marginTop: 4 }}>
+                <Text style={{ color: "#fff", fontSize: 12, marginTop: 4 }}>
                   You have {movies.length} movies
                 </Text>
               </View>

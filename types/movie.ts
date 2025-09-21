@@ -10,7 +10,8 @@ export interface Movie {
   description: string
   imdbRating: number
   imageUrl?: string;
-  userId: string
+  userId: string;
+  favorite?: boolean; // ✅ added favorite
   createdAt: string | Timestamp;
   updatedAt?: string | Timestamp;
 }

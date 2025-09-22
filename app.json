@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "movie-HUB",
-    "slug": "my-app",
+    "slug": "movie-HUB",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -13,10 +13,12 @@
     },
     "android": {
       "adaptiveIcon": {
+        "package": "com.minidu_kumasaru.movie-HUB",
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.minidu_kumasaru.myapp"
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +39,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cf756ecb-2e36-4d10-b965-dee1d4f9ec5b"
+      }
     }
   }
 }

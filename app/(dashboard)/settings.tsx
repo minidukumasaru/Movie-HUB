@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
   },
-  subtitle: { fontSize: 14, color: "#ccc", textAlign: "center", marginTop: 4 },
+  subtitle: { fontSize: 12, color: "#f59e0b", textAlign: "center", marginTop: 4 },
 
   // Scroll area
   scrollArea: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
